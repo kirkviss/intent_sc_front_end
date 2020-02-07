@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
-import { Box, Text, Button } from 'grommet';
-import shopping_cart_api from '../config/shopping_cart_api'
+import { Box, Text } from 'grommet';
+// import shopping_cart_api from '../config/shopping_cart_api'
 
 export default class ShoppingCartComponent extends Component {
     constructor(props) {
@@ -14,62 +14,53 @@ export default class ShoppingCartComponent extends Component {
             error: false
         });
     }
-
+    
     componentDidMount() {
-        if ('cart' in window.localStorage) {
-            fetch(`${shopping_cart_api[process.env.NODE_ENV]}/cart/${window.localStorage.cart.id}`)
-                .then((res) => res.json())
-                .then((res_json) => {
-                    this.setState({
-                        cart: res_json
-                    })
-                }).catch((err) => {
-                    console.log(err);
-                    this.setState({
-                        error: true
-                    })
-                })
 
-        } else {
-            fetch(`${shopping_cart_api[process.env.NODE_ENV]}/cart`, {
-                method: 'POST'
-            })
-                .then((res) => res.json())
-                .then((res_json) => {
-                    this.setState({
-                        cart: res_json
-                    })
-                }).catch((err) => {
-                    console.log(err);
-                    this.setState({
-                        error: true
-                    })
-                })
-
-        }
-        const items_obj = {}
-        // convert items to object
-        this.props.items.map((item) => {
-            items_obj[item.id] = item
+        fetch(`/v0/cart/${window.localStorage.cartId}`)
+        .then((res) => res.json())
+        .then((cart) => {
+          this.setState({
+            cart: {
+                items: cart['items'],
+                total: cart['total']
+            }
         })
-        this.items_obj = items_obj
-        // check if the items mapping is in the props
+        }).catch((err) => {
+          console.log(err);
+          window.localStorage.removeItem('cartId')
+          this.setState({
+            error: true
+          })
+        })
+
     }
     render() {
         if (this.state.error) {
 
             return <h1>Something went wrong.</h1>;
         }
+                // convert items to object
+        var items_obj = {};
+        (this.props.items).forEach(element => {
+            
+            items_obj[element.id] = {
+                id: element.id,
+                description: element.description,
+                unit_price: element.unit_price
+            }
+        });
+        // let test = (this.state.cart.items? this.state.cart.items: {})
         return (
-            <Box
-            >
+            
+            <Box>
                 <Box>
-                    <Text size="medium">Items</Text>
-                    {(this.state.cart.items).map((key, value) => {
-                        // this.props.items
-                        return <Text size="small">{this.items_obj[key].description} x {value} </Text>
+                    <Text size="medium">Items: </Text>
+                    {Object.keys((this.state.cart.items? this.state.cart.items: {})).map((key) => {
+                    
+                        return <Text size="large">{key} x {this.state.cart['items'][key]} </Text>
                     })}
-                    <Text size="medium">Total : {this.state.cart.items.total}</Text>
+                    <Text size="medium">Total : {this.state.cart.total}</Text>
                 </Box>
             </Box>
         )
